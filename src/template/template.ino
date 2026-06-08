@@ -287,6 +287,11 @@ void loop() {
     checkIrrigateStop();
   }
 
+  // 修复：夜间关闭蜂鸣器
+  if (illuminance > LIGHT_NEED_IRRIGATE) {
+    buzzTask = BUZZ_OFF;
+  }
+
   updateStatusLED();
   handleBuzzer();
 
