@@ -154,6 +154,12 @@ void updateStatusLED() {
 
 // ========== 集中管理蜂鸣器 ==========
 void handleBuzzer() {
+  // 修复：夜间关闭蜂鸣器
+  if (illuminance > LIGHT_NEED_IRRIGATE) {
+    buzzTask = BUZZ_OFF;
+    digitalWrite(PIN_BUZZER, BUZ_OFF);
+  }
+
   if (buzzTask == BUZZ_SHORT_BEEP) {
     if (millis() - buzzBeepStart > 200) {
       digitalWrite(PIN_BUZZER, BUZ_OFF); // 修复为电平控制
@@ -285,11 +291,6 @@ void loop() {
   }
   if (isIrrigating) {
     checkIrrigateStop();
-  }
-
-  // 修复：夜间关闭蜂鸣器
-  if (illuminance > LIGHT_NEED_IRRIGATE) {
-    buzzTask = BUZZ_OFF;
   }
 
   updateStatusLED();
