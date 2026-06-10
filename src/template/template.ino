@@ -19,7 +19,7 @@
 #define PIN_BUZZER 5
 #define PIN_RELAY 6
 
-#define PIN_PHOTO A0 // 修复了换行Bug
+#define PIN_PHOTO A0  // 修复了换行Bug
 #define PIN_HUMIDITY A1
 #define PIN_LEVEL A2
 
@@ -31,20 +31,25 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 // ========== 阈值与参数 ==========
 #define LIGHT_NEED_IRRIGATE 256
-#define HUMIDITY_NEED_IRRIGATE 256
+#define HUMIDITY_NEED_IRRIGATE 384
+#define NO_WATER_LEVEL 32
 #define LOW_WATER_LEVEL 256
 #define PUMP_WORK_TIME 2000
 #define IRRIGATE_COOLDOWN 10000
 #define DISPLAY_UPDATE_MS 300
 #define DEBOUNCE_DELAY 50
 
-const char *plantName[3] = {"Cactus", "Pothos", "Fern"};
-const char *stateName[2] = {"Home", "Trivial"};
+const char *plantName[3] = { "Cactus", "Pothos", "Fern" };
+const char *stateName[2] = { "Home", "Trivial" };
 
 // ========== 全局变量 ==========
 int systemState = STATE_OK;
 int plantMode = 0;
 int stateMode = 0;
+
+int illuminance = 0;
+int humidity = 0;
+int waterLevel = 0;
 
 bool isIrrigating = false;
 unsigned long irrigateStartTime = 0;
@@ -69,7 +74,7 @@ unsigned long lastDisplayUpdate = 0;
 
 // ========== 系统自检 ==========
 int systemSelfCheck(int waterLevel) {
-  if (waterLevel == 0)
+  if (waterLevel < NO_WATER_LEVEL)
     return STATE_ERROR;
   if (waterLevel < LOW_WATER_LEVEL)
     return STATE_WARNING;
@@ -103,7 +108,7 @@ void startIrrigate() {
 
   buzzTask = BUZZ_SHORT_BEEP;
   buzzBeepStart = millis();
-  digitalWrite(PIN_BUZZER, BUZ_ON); // 修复为电平控制
+  digitalWrite(PIN_BUZZER, BUZ_ON);  // 修复为电平控制
 }
 
 void checkIrrigateStop() {
@@ -114,7 +119,7 @@ void checkIrrigateStop() {
       isIrrigating = false;
       buzzTask = BUZZ_SHORT_BEEP;
       buzzBeepStart = millis();
-      digitalWrite(PIN_BUZZER, BUZ_ON); // 修复为电平控制
+      digitalWrite(PIN_BUZZER, BUZ_ON);  // 修复为电平控制
     }
   }
 }
@@ -123,11 +128,9 @@ void checkIrrigateStop() {
 bool isNeedIrrigate(int illuminance, int humidity) {
   if (systemState == STATE_ERROR)
     return false;
-  if (!isIrrigating && (millis() - irrigateStartTime) < IRRIGATE_COOLDOWN &&
-      irrigateStartTime != 0)
+  if (!isIrrigating && (millis() - irrigateStartTime) < IRRIGATE_COOLDOWN && irrigateStartTime != 0)
     return false;
-  return (illuminance < LIGHT_NEED_IRRIGATE &&
-          humidity < HUMIDITY_NEED_IRRIGATE);
+  return (illuminance < LIGHT_NEED_IRRIGATE && humidity > HUMIDITY_NEED_IRRIGATE);
 }
 
 // ========== 更新板载 LED ==========
@@ -141,7 +144,7 @@ void updateStatusLED() {
   else if (systemState == STATE_WARNING)
     interval = 800;
   else {
-    digitalWrite(LED_BUILTIN, LOW); // 修复：OK时应当熄灭，否则太刺眼
+    digitalWrite(LED_BUILTIN, LOW);  // 修复：OK时应当熄灭，否则太刺眼
     return;
   }
 
@@ -162,7 +165,7 @@ void handleBuzzer() {
 
   if (buzzTask == BUZZ_SHORT_BEEP) {
     if (millis() - buzzBeepStart > 200) {
-      digitalWrite(PIN_BUZZER, BUZ_OFF); // 修复为电平控制
+      digitalWrite(PIN_BUZZER, BUZ_OFF);  // 修复为电平控制
       buzzTask = BUZZ_OFF;
     }
     return;
@@ -190,9 +193,9 @@ void handleBuzzer() {
       buzzTimer = millis();
       buzzPhase = !buzzPhase;
       if (buzzPhase) {
-        digitalWrite(PIN_BUZZER, BUZ_ON); // 修复为电平控制
+        digitalWrite(PIN_BUZZER, BUZ_ON);  // 修复为电平控制
       } else {
-        digitalWrite(PIN_BUZZER, BUZ_OFF); // 修复为电平控制
+        digitalWrite(PIN_BUZZER, BUZ_OFF);  // 修复为电平控制
       }
     }
   }
@@ -249,7 +252,7 @@ void setup() {
   digitalWrite(PIN_RELAY, HIGH);
   digitalWrite(PIN_LED_WORK, LOW);
   digitalWrite(LED_BUILTIN, LOW);
-  digitalWrite(PIN_BUZZER, BUZ_OFF); // 修复：初始化时强制关闭蜂鸣器
+  digitalWrite(PIN_BUZZER, BUZ_OFF);  // 修复：初始化时强制关闭蜂鸣器
 
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
     while (1) {
@@ -267,9 +270,9 @@ void setup() {
 }
 
 void loop() {
-  int illuminance = analogRead(PIN_PHOTO);
-  int humidity = analogRead(PIN_HUMIDITY);
-  int waterLevel = analogRead(PIN_LEVEL);
+  illuminance = analogRead(PIN_PHOTO);
+  humidity = analogRead(PIN_HUMIDITY);
+  waterLevel = analogRead(PIN_LEVEL);
   systemState = systemSelfCheck(waterLevel);
 
   // 修复：使用各自独立的时间戳
