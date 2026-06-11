@@ -2,34 +2,42 @@
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
 
-// ========== 硬件适配器 (针对有源蜂鸣器) ==========
-// 很多3针模块是低电平触发。如果烧录后依旧常响，请将 ON 改为 LOW, OFF 改为 HIGH
+/*
+ * 盆栽自动浇灌系统
+ *
+ * 传感器读数约定：
+ * - 土壤湿度读数越大，表示土壤越干。
+ * - 光照读数越大，表示环境越暗。
+ * - 水位读数越小，表示水箱水量越少。
+ */
+
+// 有源蜂鸣器电平约定；如果实际模块触发电平相反，只需要调整这两个宏。
 #define BUZ_ON LOW
 #define BUZ_OFF HIGH
 
-// ========== 系统状态定义 ==========
+// 水箱状态分级，用于 LED、蜂鸣器和 OLED 显示。
 #define STATE_OK 0
 #define STATE_WARNING 1
 #define STATE_ERROR 2
 
-// ========== 引脚定义 ==========
+// Arduino 与外设的引脚分配。
 #define PIN_BUTTON_PLANT 2
 #define PIN_BUTTON_STATE 3
 #define PIN_LED_WORK 4
 #define PIN_BUZZER 5
 #define PIN_RELAY 6
 
-#define PIN_PHOTO A0  // 修复了换行Bug
+#define PIN_PHOTO A0
 #define PIN_HUMIDITY A1
 #define PIN_LEVEL A2
 
-// ========== OLED 配置 ==========
+// OLED 屏幕参数。
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_ADDRESS 0x3C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// ========== 阈值与参数 ==========
+// 阈值和时间参数集中放置，便于根据传感器实测值重新标定。
 #define LIGHT_NEED_IRRIGATE 256
 #define HUMIDITY_NEED_IRRIGATE 384
 #define NO_WATER_LEVEL 32
@@ -39,10 +47,11 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 #define DISPLAY_UPDATE_MS 300
 #define DEBOUNCE_DELAY 50
 
+// OLED 使用英文标签，避免默认字库在部分环境中无法显示中文。
 const char *plantName[3] = { "Cactus", "Pothos", "Fern" };
 const char *stateName[2] = { "Home", "Trivial" };
 
-// ========== 全局变量 ==========
+// 主循环中共享的系统状态。
 int systemState = STATE_OK;
 int plantMode = 0;
 int stateMode = 0;
@@ -56,10 +65,10 @@ unsigned long irrigateStartTime = 0;
 
 int lastBtnPlant = HIGH;
 int lastBtnState = HIGH;
-// 修复：按键独立的消抖时间戳
 unsigned long lastBtnPlantTime = 0;
 unsigned long lastBtnStateTime = 0;
 
+// 蜂鸣器任务用于生成短响、慢速告警和快速告警。
 enum BuzzerTask {
   BUZZ_OFF,
   BUZZ_WARNING_SLOW,
@@ -72,7 +81,7 @@ unsigned long buzzBeepStart = 0;
 bool buzzPhase = false;
 unsigned long lastDisplayUpdate = 0;
 
-// ========== 系统自检 ==========
+// 根据水位读数判断水箱是否足够安全。
 int systemSelfCheck(int waterLevel) {
   if (waterLevel < NO_WATER_LEVEL)
     return STATE_ERROR;
@@ -81,7 +90,7 @@ int systemSelfCheck(int waterLevel) {
   return STATE_OK;
 }
 
-// ========== 非阻塞按钮检测 ==========
+// 带消抖的按键扫描，按钮按下时读数为 LOW。
 bool readButtonPress(int pin, int &lastState, unsigned long &lastDebounce) {
   int reading = digitalRead(pin);
   if (reading != lastState) {
@@ -97,7 +106,7 @@ bool readButtonPress(int pin, int &lastState, unsigned long &lastDebounce) {
   return false;
 }
 
-// ========== 灌溉动作 ==========
+// 启动一次非阻塞浇水流程，由继电器控制水泵通断。
 void startIrrigate() {
   if (isIrrigating)
     return;
@@ -108,9 +117,10 @@ void startIrrigate() {
 
   buzzTask = BUZZ_SHORT_BEEP;
   buzzBeepStart = millis();
-  digitalWrite(PIN_BUZZER, BUZ_ON);  // 修复为电平控制
+  digitalWrite(PIN_BUZZER, BUZ_ON);
 }
 
+// 到达设定工作时间后关闭水泵，并给出一次短响提示。
 void checkIrrigateStop() {
   if (isIrrigating) {
     if (millis() - irrigateStartTime >= PUMP_WORK_TIME) {
@@ -119,12 +129,12 @@ void checkIrrigateStop() {
       isIrrigating = false;
       buzzTask = BUZZ_SHORT_BEEP;
       buzzBeepStart = millis();
-      digitalWrite(PIN_BUZZER, BUZ_ON);  // 修复为电平控制
+      digitalWrite(PIN_BUZZER, BUZ_ON);
     }
   }
 }
 
-// ========== 是否需要浇水 ==========
+// 判断当前传感器状态是否允许触发浇水。
 bool isNeedIrrigate(int illuminance, int humidity) {
   if (systemState == STATE_ERROR)
     return false;
@@ -133,7 +143,7 @@ bool isNeedIrrigate(int illuminance, int humidity) {
   return (illuminance < LIGHT_NEED_IRRIGATE && humidity > HUMIDITY_NEED_IRRIGATE);
 }
 
-// ========== 更新板载 LED ==========
+// 根据水箱状态闪烁板载 LED。
 void updateStatusLED() {
   static unsigned long ledTimer = 0;
   static bool ledState = false;
@@ -144,7 +154,7 @@ void updateStatusLED() {
   else if (systemState == STATE_WARNING)
     interval = 800;
   else {
-    digitalWrite(LED_BUILTIN, LOW);  // 修复：OK时应当熄灭，否则太刺眼
+    digitalWrite(LED_BUILTIN, LOW);
     return;
   }
 
@@ -155,9 +165,8 @@ void updateStatusLED() {
   }
 }
 
-// ========== 集中管理蜂鸣器 ==========
+// 统一驱动蜂鸣器，避免告警逻辑阻塞主循环。
 void handleBuzzer() {
-  // 修复：夜间关闭蜂鸣器
   if (illuminance > LIGHT_NEED_IRRIGATE) {
     buzzTask = BUZZ_OFF;
     digitalWrite(PIN_BUZZER, BUZ_OFF);
@@ -165,7 +174,7 @@ void handleBuzzer() {
 
   if (buzzTask == BUZZ_SHORT_BEEP) {
     if (millis() - buzzBeepStart > 200) {
-      digitalWrite(PIN_BUZZER, BUZ_OFF);  // 修复为电平控制
+      digitalWrite(PIN_BUZZER, BUZ_OFF);
       buzzTask = BUZZ_OFF;
     }
     return;
@@ -193,15 +202,15 @@ void handleBuzzer() {
       buzzTimer = millis();
       buzzPhase = !buzzPhase;
       if (buzzPhase) {
-        digitalWrite(PIN_BUZZER, BUZ_ON);  // 修复为电平控制
+        digitalWrite(PIN_BUZZER, BUZ_ON);
       } else {
-        digitalWrite(PIN_BUZZER, BUZ_OFF);  // 修复为电平控制
+        digitalWrite(PIN_BUZZER, BUZ_OFF);
       }
     }
   }
 }
 
-// ========== OLED 显示更新 ==========
+// 刷新 OLED 状态页。
 void updateDisplay(int illuminance, int humidity, int waterLevel) {
   display.clearDisplay();
   display.setTextSize(1);
@@ -252,7 +261,7 @@ void setup() {
   digitalWrite(PIN_RELAY, HIGH);
   digitalWrite(PIN_LED_WORK, LOW);
   digitalWrite(LED_BUILTIN, LOW);
-  digitalWrite(PIN_BUZZER, BUZ_OFF);  // 修复：初始化时强制关闭蜂鸣器
+  digitalWrite(PIN_BUZZER, BUZ_OFF);
 
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
     while (1) {
@@ -275,7 +284,6 @@ void loop() {
   waterLevel = analogRead(PIN_LEVEL);
   systemState = systemSelfCheck(waterLevel);
 
-  // 修复：使用各自独立的时间戳
   if (readButtonPress(PIN_BUTTON_PLANT, lastBtnPlant, lastBtnPlantTime)) {
     plantMode = (plantMode + 1) % 3;
     buzzTask = BUZZ_SHORT_BEEP;
