@@ -1,5 +1,7 @@
 # Automatic Potted Plant Irrigation System
 
+[中文](./README.md)
+
 This is an Arduino-based automatic irrigation project for potted plants. It monitors soil moisture, reports low water levels in the tank, protects the system under low-light conditions, and shows runtime status on an OLED display.
 
 For hardware interface details, see the [interface documentation](./docs/interface-documentation.md).
