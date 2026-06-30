@@ -35,18 +35,18 @@ The Wokwi reference provided in the original documentation is older, and some ha
 
 See the interface documentation for full wiring details.
 
-| Arduino Pin | Peripheral |
-| --- | --- |
-| D2 | Button 1 |
-| D3 | Button 2 |
-| D4 | Status LED |
-| D5 | Active buzzer |
-| D6 | Relay IN |
-| A0 | Light sensor AO |
-| A1 | Soil moisture sensor AO |
-| A2 | Water level sensor S |
-| A4 | OLED SDA |
-| A5 | OLED SCL |
+| Arduino Pin | Peripheral              |
+| ----------- | ----------------------- |
+| D2          | Button 1                |
+| D3          | Button 2                |
+| D4          | Status LED              |
+| D5          | Active buzzer           |
+| D6          | Relay IN                |
+| A0          | Light sensor AO         |
+| A1          | Soil moisture sensor AO |
+| A2          | Water level sensor S    |
+| A4          | OLED SDA                |
+| A5          | OLED SCL                |
 
 The relay controls power to the water pump. In the program, `LOW` means the relay is engaged and the pump is running, while `HIGH` means the pump is off.
 
@@ -62,20 +62,20 @@ Sensor reading conventions:
 
 Core thresholds are defined near the top of `template.ino`:
 
-| Constant | Purpose |
-| --- | --- |
-| `LIGHT_NEED_IRRIGATE` | Light threshold |
-| `HUMIDITY_NEED_IRRIGATE` | Soil dryness threshold |
-| `NO_WATER_LEVEL` | Severe water shortage threshold |
-| `LOW_WATER_LEVEL` | Low-water alert threshold |
-| `PUMP_WORK_TIME` | Pump runtime for one irrigation cycle |
-| `IRRIGATE_COOLDOWN` | Cooldown time between irrigation cycles |
+| Constant                 | Purpose                                 |
+| ------------------------ | --------------------------------------- |
+| `LIGHT_NEED_IRRIGATE`    | Light threshold                         |
+| `HUMIDITY_NEED_IRRIGATE` | Soil dryness threshold                  |
+| `NO_WATER_LEVEL`         | Severe water shortage threshold         |
+| `LOW_WATER_LEVEL`        | Low-water alert threshold               |
+| `PUMP_WORK_TIME`         | Pump runtime for one irrigation cycle   |
+| `IRRIGATE_COOLDOWN`      | Cooldown time between irrigation cycles |
 
 ## Button Controls
 
-| Button | Function |
-| --- | --- |
-| Button 1 | Switch plant mode |
+| Button   | Function           |
+| -------- | ------------------ |
+| Button 1 | Switch plant mode  |
 | Button 2 | Switch system mode |
 
 The default OLED font has limited support for Chinese text, so the program UI uses English labels for modes and status values.
@@ -90,12 +90,12 @@ The default OLED font has limited support for Chinese text, so the program UI us
 
 ## Files
 
-| File | Description |
-| --- | --- |
-| `template.ino` | Main Arduino program |
-| `docs/接口文档.md` | Hardware connection and interface notes |
-| `README.md` | Chinese project overview and usage guide |
-| `README.en.md` | English project overview and usage guide |
+| File                                 | Description                              |
+| ------------------------------------ | ---------------------------------------- |
+| `SmallAutomaticIrrigationSystem.ino` | Main Arduino program                     |
+| `docs/接口文档.md`                       | Hardware connection and interface notes  |
+| `README.md`                          | Chinese project overview and usage guide |
+| `README.en.md`                       | English project overview and usage guide |
 
 ## Notes
 
