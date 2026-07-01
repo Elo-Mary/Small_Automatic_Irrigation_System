@@ -60,7 +60,7 @@ Sensor reading conventions:
 - A higher light reading means the environment is darker.
 - A lower water level reading means there is less water in the tank.
 
-Core thresholds are defined near the top of `template.ino`:
+Core thresholds are defined near the top of `SmallAutomaticIrrigationSystem.ino`:
 
 | Constant                 | Purpose                                 |
 | ------------------------ | --------------------------------------- |
@@ -84,7 +84,7 @@ The default OLED font has limited support for Chinese text, so the program UI us
 
 1. Install the required libraries in the Arduino IDE: `Adafruit GFX Library` and `Adafruit SSD1306`.
 2. Wire the hardware according to the [interface documentation](./docs/interface-documentation.md).
-3. Open `template.ino` and select Arduino Uno or a compatible board.
+3. Open `SmallAutomaticIrrigationSystem.ino` and select Arduino Uno or a compatible board.
 4. Compile and upload the program.
 5. Adjust the threshold constants based on real sensor readings.
 
@@ -93,8 +93,7 @@ The default OLED font has limited support for Chinese text, so the program UI us
 | File                                 | Description                              |
 | ------------------------------------ | ---------------------------------------- |
 | `SmallAutomaticIrrigationSystem.ino` | Main Arduino program                     |
-| `docs/接口文档.md`                       | Hardware connection and interface notes  |
-| `README.md`                          | Chinese project overview and usage guide |
+| `docs/interface-documentation.md`    | Hardware connection and interface notes  |
 | `README.en.md`                       | English project overview and usage guide |
 
 ## Notes

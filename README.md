@@ -58,7 +58,7 @@
 - 光照读数越大，表示环境越暗。
 - 水位读数越小，表示水箱水量越少。
 
-核心阈值集中定义在 `template.ino` 顶部：
+核心阈值集中定义在 `SmallAutomaticIrrigationSystem.ino` 顶部：
 
 | 常量                       | 作用          |
 | ------------------------ | ----------- |
@@ -82,7 +82,7 @@ OLED 默认字库对中文支持有限，因此程序界面使用英文标签显
 
 1. 在 Arduino IDE 中安装依赖库：`Adafruit GFX Library` 和 `Adafruit SSD1306`。
 2. 按照 [接口文档.md](./docs/接口文档.md) 完成硬件连接。
-3. 打开 `template.ino`，选择 Arduino Uno 或兼容开发板。
+3. 打开 `SmallAutomaticIrrigationSystem.ino`，选择 Arduino Uno 或兼容开发板。
 4. 编译并上传程序。
 5. 根据实际传感器读数调整阈值常量。
 
